@@ -24,9 +24,6 @@ XAI_ENDPOINT = "https://api.xai.com"
 # Grok endpoint
 GROK_ENDPOINT = config('GROK_ENDPOINT')
 
-# OpenAI endpoint
-OPENAI_ENDPOINT = config('OPENAI_ENDPOINT')
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 

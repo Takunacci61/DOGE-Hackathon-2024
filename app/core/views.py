@@ -4,14 +4,10 @@ from rest_framework import status
 from .serializers import CountryInputSerializer
 from django.conf import settings
 import json
-import openai
+from grok import Grok
+
 
 # Initialize xAI Grok client
-
-# Set the API key directly
-openai.api_key = settings.OPENAI_ENDPOINT
-
-
 class CountryAPIView(APIView):
     """
     API view to handle country input.
@@ -61,42 +57,41 @@ class ResidencyInfoAPIView(APIView):
 
 def get_residency_info(country):
     """
-    Get residency types for a given country using OpenAI's GPT-4 model.
+    Get residency types for a given country using Grok Beta.
     Returns a JSON response with residency types including name, description, URL, and requirements.
     """
     try:
-        messages = [
+        grok = Grok(
+            """
             {
-                "role": "system",
-                "content": (
-                    "You are a knowledgeable immigration specialist. "
-                    "You must return ONLY a valid JSON object, no extra text, no code fences, and no commentary. "
-                    "The JSON must contain a top-level key 'residency_types' whose value is an array of objects. "
-                    "Each object must include the following keys: 'name', 'description', 'url', and 'requirements'. "
-                    "'requirements' must be an array of strings. "
-                    "List all available residency options without omission."
-                )
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Provide a strictly formatted JSON object for {country} with the key 'residency_types'. "
-                    "Each item in the array should have 'name', 'description', 'url', and 'requirements'. "
-                    "Do not add any text other than the JSON."
-                )
+                "residency_types": [
+                    {
+                        "name": str,
+                        "description": str,
+                        "url": str,
+                        "requirements": [str]
+                    }
+                ]
             }
-        ]
-
-        completion = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=messages,
-            temperature=0
+            """
         )
 
-        response_text = completion.get("choices", [{}])[0].get("message", {}).get("content", "")
+        # Define the structured expectation with Grok Beta
+        prompt = (
+            f"You are a knowledgeable immigration specialist. "
+            f"Provide a JSON object containing residency types for {country}. "
+            "The JSON must include a key 'residency_types' which is an array of objects. "
+            "Each object must include the following keys: 'name', 'description', 'url', and 'requirements'. "
+            "The 'requirements' field must be an array of strings. "
+            "Return only the JSON, with no additional text or commentary."
+        )
+
+        # Generate response using Grok Beta
+        response = grok.completion(prompt=prompt, temperature=0)
 
         try:
-            response_json = json.loads(response_text)
+            # Parse response into JSON
+            response_json = json.loads(response)
             if "residency_types" in response_json:
                 return response_json
             else:
@@ -106,4 +101,3 @@ def get_residency_info(country):
 
     except Exception as e:
         return {"error": f"An error occurred: {str(e)}"}
-
