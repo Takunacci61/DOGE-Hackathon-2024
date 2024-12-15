@@ -1,0 +1,12 @@
+# Virtual environment
+venv/
+
+# Static files
+staticfiles/
+media/
+app/.env
+/.idea
+app/nginx.conf
+app/db.sqlite3
+
+
